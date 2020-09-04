@@ -1,32 +1,18 @@
+from domainmodel.person import Person
 
-class Director:
+class Director(Person):
 
     def __init__(self, director_full_name: str):
-        if director_full_name == "" or type(director_full_name) is not str:
-            self.__director_full_name = None
-        else:
-            self.__director_full_name = director_full_name.strip()
+        super().__init__(director_full_name)
 
     @property
-    def director_full_name(self) -> str:
-        return self.__director_full_name
+    def director_full_name(self) -> str: # feels a bit gross that this can't be inherited
+        return self.full_name # __full_name is private in Person, so can't be accessed here
 
     def __repr__(self):
-        return f"<Director {self.__director_full_name}>"
+        return "<Director {}>".format(self.full_name)
 
-    def __eq__(self, other):
-        # TODO
-        pass
-
-    def __lt__(self, other):
-        # TODO
-        pass
-
-    def __hash__(self):
-        # TODO
-        pass
-
-
+"""
 class TestDirectorMethods:
 
     def test_init(self):
@@ -36,3 +22,6 @@ class TestDirectorMethods:
         assert director2.director_full_name is None
         director3 = Director(42)
         assert director3.director_full_name is None
+        director4 = Director("Ben Zebra")
+        assert director4 < director1 == True
+"""
