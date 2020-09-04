@@ -1,9 +1,13 @@
 import pytest
 
+from datafilereaders.movie_file_csv_reader import MovieFileCSVReader
 from domainmodel.director import Director
 from domainmodel.genre import Genre
 from domainmodel.actor import Actor
 from domainmodel.movie import Movie
+from domainmodel.review import Review
+from domainmodel.user import User
+from domainmodel.watchlist import WatchList
 
 
 class TestDirectorMethods: # could make a fixture for each of the directors to stop repeated code
@@ -220,9 +224,139 @@ class TestMovieMethods:
         assert a_movie.genres == [genre2]  # test it doesn't randomly remove an genre (I don't see how but yeah)
 
 
+class TestMovieFileCSVReader:
+    def test_read_csv_file(self):
+        movie_file_csv_reader_object = MovieFileCSVReader(r"C:\Users\Nathan Longhurst\OneDrive - The University of Auckland\b Comp235\Assignment\GitHub Clone (Current)\CS235FlixSkeleton\datafiles\Data1000Movies.csv")
+        movie_file_csv_reader_object.read_csv_file()
+
+        dataset_of_movies = movie_file_csv_reader_object.dataset_of_movies
+        dataset_of_actors = movie_file_csv_reader_object.dataset_of_actors
+        dataset_of_directors = movie_file_csv_reader_object.dataset_of_directors
+        dataset_of_genres = movie_file_csv_reader_object.dataset_of_genres
+
+        assert len(dataset_of_movies) == 1000
+        assert len(set(dataset_of_actors)) == len(dataset_of_actors) # check unique items only
+        assert len(set(dataset_of_directors)) == len(dataset_of_directors)  # ^ ditto
+        assert len(set(dataset_of_genres)) == len(dataset_of_genres)  # ^ ditto
 
 
+class TestReview:
+    def test_init(self):
+        review = Review(Movie("Star Wars", 1999), "Great Movie", 10)
 
+        assert review.movie.title == "Star Wars"
+        assert review.review_text == "Great Movie"
+        assert review.rating == 10
+        assert repr(review) == "<Review Star Wars 1999, Great Movie, 10 (4-9-2020)>"
+
+class TestUser:
+    def test_all(self):
+        user1 = User("nathanl127", "passwordgoeshere")
+        user2 = User("boomer127", "passwordgoeshere")
+        review = Review(Movie("Star Wars", 1999), "Great Movie", 10)
+        a_movie = Movie("Back To The Future", 1965)
+        a_movie.runtime_minutes = 10
+
+        assert user1.user_name == "nathanl127"
+        assert user1.password == "passwordgoeshere"
+        assert user1.reviews == []
+        assert user1.time_spent_watching_movies_minutes == 0
+        assert len(user1.watched_movies) == 0
+
+        user1.watch_movie(a_movie)
+        assert len(user1.watched_movies) == 1
+        assert user1.time_spent_watching_movies_minutes == 10
+
+        user1.add_review(review)
+        assert len(user1.reviews) == 1
+
+        assert repr(user1) == "<User nathanl127>"
+        assert user2 < user1
+        assert hash(user1) != hash(user2)
+
+
+class TestWatchList: # haven't implemented, but here are the test cases
+    def test_init_and_size(self):
+        watchlist = WatchList()
+        assert watchlist.size() == 0 # check starts with 0 movies in watchlist (assumes size works)
+
+    def test_add_movie(self):
+        watchlist = WatchList()
+        watchlist.add_movie(Movie("Star Wars", 1999))
+        assert watchlist.size() == 1 # tests that add and size are working..
+        watchlist.add_movie(Movie("Star Wars", 1999))
+        assert watchlist.size() == 1 # test that indeed a duplicate movie can't be added
+
+    def test_remove_movie(self):
+        watchlist = WatchList()
+        movie1 = Movie("Star Wars", 1999)
+        watchlist.add_movie(movie1)
+        assert watchlist.size() == 1
+        watchlist.remove_movie(movie1)
+        assert watchlist.size() == 0 # tests it removes a movie if it is there
+        watchlist.remove_movie(movie1)
+        assert watchlist.size() == 0 # tests it does nothing if movie not there
+
+    def test_select_movie_to_watch(self):
+        watchlist = WatchList()
+        movie1 = Movie("Moana", 2016)
+        movie2 = Movie("Ice Age", 2002)
+        movie3 = Movie("Guardians of the Galaxy", 2012)
+        watchlist.add_movie(movie1)
+        watchlist.add_movie(movie2)
+        watchlist.add_movie(movie3)
+
+        assert watchlist.select_movie_to_watch(0) == movie1
+        # ^ note: could've just done "== Movie("Moana", 2016)" since __eq__ is defined by same title and year
+        assert watchlist.select_movie_to_watch(1) == movie2
+        assert watchlist.select_movie_to_watch(3) == None # tests that it gives None if range out of bounds
+
+    def test_size(self): # this test is a bit silly since most the other tests rely on size working?
+        watchlist = WatchList()
+        assert watchlist.size() == 0
+        watchlist.remove_movie(Movie("Star Wars", 1999))
+        assert watchlist.size() == 0
+        # ^ I believe this is a great test, checking that remove_movie
+        # doesn't subtract 1 from size unless a movie is indeed removed
+
+        watchlist.add_movie(Movie("Star Wars", 1999))
+        assert watchlist.size() == 1
+        watchlist.add_movie(Movie("Ice Age", 2002))
+        assert watchlist.size() == 2
+        watchlist.add_movie(Movie("Guardians of the Galaxy", 2012))
+        assert watchlist.size() == 3
+        watchlist.remove_movie(Movie("Star Wars", 1999))
+        # ^ as per note above note, __eq___ is defined by same title and year, so this should do the job of removing
+        assert watchlist.size() == 2 # test size reacts to movies being removed
+
+
+    def test_first_movie_in_watchlist(self):
+        watchlist = WatchList()
+        movie1 = Movie("Moana", 2016)
+        watchlist.add_movie(Movie("Moana", 2016))
+        watchlist.add_movie(Movie("Ice Age", 2002))
+        watchlist.add_movie(Movie("Guardians of the Galaxy", 2012))
+        assert watchlist.first_movie_in_watchlist() == movie1
+
+
+    def test_iterable(self):
+        # note, a for loop uses '__iter__' (and '__next__' on the iterable object returned from __iter__)
+        # so checking a for loop works, and correctly, is sufficient
+        watchlist = WatchList()
+
+        movie1 = Movie("Moana", 2016)
+        movie2 = Movie("Ice Age", 2002)
+        movie3 = Movie("Guardians of the Galaxy", 2012)
+        watchlist.add_movie(movie1)
+        watchlist.add_movie(movie2)
+        watchlist.add_movie(movie3)
+
+        # one way to do it
+        a_list = [movie1, movie2, movie3]
+        index = 0
+        for movie in watchlist:
+            assert movie == a_list[index]
+            index += 1
 
 
 

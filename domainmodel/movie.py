@@ -13,6 +13,7 @@ class Movie:
             self.__release_year = release_year
         else:
             self.__release_year = None
+        # ^ would be less repeated code to use setter methods for those
 
         self.__description = None
         self.__director = None
@@ -20,18 +21,23 @@ class Movie:
         self.__genres = list()
         self.__runtime_minutes = None
 
-    # getter and setter methods (for all attributes except year)
+        # more (not required)
+        self.__external_rating = None
+        self.__external_rating_votes = None # was referred to as "rating votes" but "external rating votes" is more descriptive
+        self.__revenue = None
+        self.__metascore = None
+
+    #------------------------ getter and setter methods (for all attributes except year)
     @property
     def title(self):
         return self.__title
 
     @title.setter
     def title(self, a_title):
-        if a_title != "" and type(a_title) == str: # this wasn't asked for
+        if a_title != "" and type(a_title) == str:
             self.__title = a_title.strip()
         else:
-            self.__title = None # HIDDEN TEST CASE
-        # assuming they don't want it set if it's an invalid name
+            self.__title = None
 
     @property
     def description(self):
@@ -42,7 +48,7 @@ class Movie:
         if type(a_description) == str:
             self.__description = a_description.strip()
         else:
-            self.__description == None # HIDDEN TEST CASE
+            self.__description == None
 
     @property
     def director(self):
@@ -59,9 +65,7 @@ class Movie:
 
     @actors.setter
     def actors(self, actor_list):
-        # ambigious on whether this should be added, and how it should work (considering add_actor exists)
-        # so this will be used when you go a_movie_object.actors = [actor_object1, actor_object2, actor_object3]
-        self.__actor_list = list() # empty list
+        self.__actor_list = list()
         for a_actor in actor_list:
             if type(a_actor) == Actor:
                 self.__actors.append(a_actor)
@@ -71,8 +75,8 @@ class Movie:
         return self.__genres
 
     @genres.setter
-    def genres(self, genre_list): # ambigious (ditto to above)
-        self.__genre_list = list() # empty list
+    def genres(self, genre_list):
+        self.__genre_list = list()
         for a_genre in genre_list:
             if type(a_genre) == Genre:
                 self.__genres.append(a_genre)
@@ -83,11 +87,61 @@ class Movie:
 
     @runtime_minutes.setter
     def runtime_minutes(self, runtime_minutes):
-        # i'll assume a number is passed, and round if a float is given
-        if runtime_minutes > 0: # positive number
+        # i'll assume a number is passed
+        if runtime_minutes > 0:
             self.__runtime_minutes = round(runtime_minutes)
         else:
             raise ValueError # as requested
+
+        # more getter and setters (not required)
+
+    # ------------------------ More getter and setter methods
+
+    @property
+    def external_rating(self):
+        return self.__external_rating
+
+    @external_rating.setter
+    def external_rating(self, an_external_rating):
+        # assuming a number passed
+        if an_external_rating >= 0 and an_external_rating <= 10:  # what I can gather from CSV
+            self.__external_rating = an_external_rating
+        else:
+            raise ValueError  # assuming they'll want this
+
+    @property
+    def external_rating_votes(self):
+        return self.__external_rating_votes
+
+    @external_rating_votes.setter
+    def external_rating_votes(self, an_external_rating_votes):
+        # assuming a number passed
+        if an_external_rating_votes >= 0:  # obvious requirement
+            self.__external_rating = an_external_rating_votes
+        else:
+            raise ValueError  # assuming they'll want this
+
+    @property
+    def revenue(self):
+        return self.__revenue
+
+    @revenue.setter
+    def revenue(self, a_revenue):
+        if a_revenue >= 0:  # a requirement, I think? Can revenue be negative?
+            self.__revenue = a_revenue
+        else:
+            raise ValueError  # assuming they'll want this
+
+    @property
+    def metascore(self):
+        return self.__metascore
+
+    @metascore.setter
+    def metascore(self, a_metascore):
+        if a_metascore >= 0:  # I think this is a requirement?
+            self.__meterscore = a_metascore
+        else:
+            raise ValueError  # assuming they'll wannt this
 
     # they missed out having a getter and setter for year, putting it in for the sake of cleanliness
     @property
@@ -100,8 +154,7 @@ class Movie:
         if type(a_release_year) == int and a_release_year >= 1900:
             self.__release_year = a_release_year
 
-    # other methods
-
+    #------------------------  other methods
     def add_actor(self, a_actor):
         if type(a_actor) == Actor: # assuming they want this
             if a_actor not in self.__actors:
@@ -115,33 +168,30 @@ class Movie:
         # they asked to NOT throw an error (hence above)
 
     def add_genre(self, a_genre):
-        if type(a_genre) == Genre: # assuming they want this
+        if type(a_genre) == Genre:
             if a_genre not in self.__genres:
                 self.__genres.append(a_genre)
-        # unsure if they want to throw an error
 
     def remove_genre(self, a_genre):
-        # ditto to remove_actor
         if type(a_genre) == Genre:
             if a_genre in self.__genres:
                 self.__genres.remove(a_genre)
 
-    # special methods, aka magic methods
-
+    #------------------------  special methods, aka magic methods
     def __repr__(self):
         return "<Movie {}, {}>".format(self.__title, self.__release_year)
 
-    def __eq__(self, other):
-        # note, is it considered good practice to not use getter/setter methods (and rather directly talk to the attributes) in the class's methods, or nah?
-        return (self.__title.lower() == other.title.lower()) and (self.__release_year == other.release_year)
+    def __eq__(self, other): # Assumes title IS case sensitive
+        if type(other) == Movie:
+            return (self.__title == other.title) and (self.__release_year == other.release_year)
+        else:
+            return False
 
-    def __lt__(self, other):
-        # presuming what they mean is that want me to sort by title THEN by release year (that intuively makes sense)
-
-        if self.__title.lower() == other.title.lower():
+    def __lt__(self, other): # sorting by title then release year
+        if self.__title == other.title:
             return self.__release_year < other.release_year
         else:
-            return self.__title.lower() < other.title.lower()
+            return self.__title < other.title
 
     def __hash__(self):
-        return hash(self.__title.lower() + str(self.__release_year)) # this would be one way to have a hash based on title and release year
+        return hash(self.__title + str(self.__release_year)) # this would be one way to have a hash based on title and release year
